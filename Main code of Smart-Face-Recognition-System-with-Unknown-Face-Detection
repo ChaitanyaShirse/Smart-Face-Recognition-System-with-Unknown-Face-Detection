@@ -9,7 +9,7 @@ image_paths = [
     "D:\\Camera Roll\\WIN_20230725_22_37_40_Pro.jpg",      #add path of your images
     "D:\Downloads\images.jpg"
 ]
-
+'''#https://github.com/ChaitanyaShirse/Smart-Face-Recognition-System-with-Unknown-Face-Detection'''
 # Initialize the webcam
 video_capture = cv2.VideoCapture(0)
 
