@@ -1,0 +1,91 @@
+# ~ Smart Face Recognition System with Unknown Face Detection ~
+import cv2
+from deepface import DeepFace
+import time
+
+# Load the known face images and their names
+known_face_names = ["Chaitanya Shirse", "Ratan Tata sir"]  # add Names of the person serialwise 
+image_paths = [
+    "D:\\Camera Roll\\WIN_20230725_22_37_40_Pro.jpg",      #add path of your images
+    "D:\Downloads\images.jpg"
+]
+
+# Initialize the webcam
+video_capture = cv2.VideoCapture(0)
+
+# Variables for detecting unknown faces and starting the timer
+unknown_face_detected = False
+start_time = None
+unknown_image_path = None
+
+# Load a pre-trained face detector from OpenCV
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+
+while True:
+    # Capture a single frame from the webcam
+    ret, frame = video_capture.read()
+    if not ret:
+        break
+
+    # Convert frame to grayscale for face detection
+    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # Detect faces in the frame
+    faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+    name = "Unknown"
+
+    for (x, y, w, h) in faces:
+        # Crop the detected face for processing
+        face_crop = frame[y:y + h, x:x + w]
+
+        # Save the cropped face temporarily
+        temp_face_path = "temp_face.jpg"
+        cv2.imwrite(temp_face_path, face_crop)
+
+        # Compare the detected face with each known image using DeepFace
+        for known_image_path, known_name in zip(image_paths, known_face_names):
+            try:
+                result = DeepFace.verify(
+                    img1_path=known_image_path,
+                    img2_path=temp_face_path,
+                    model_name="VGG-Face",
+                    enforce_detection=False
+                )
+                if result["verified"]:
+                    name = known_name
+                    unknown_face_detected = False
+                    start_time = None
+                    break
+            except Exception as e:
+                print(f"Error: {e}")
+
+        # If an unknown face is detected, start the timer
+        if name == "Unknown" and not unknown_face_detected:
+            unknown_face_detected = True
+            start_time = time.time()
+
+        # If 7 seconds have passed and the face is still unknown, save the image
+        if unknown_face_detected and start_time and time.time() - start_time >= 7:
+            timestamp = time.strftime("%Y%m%d-%H%M%S")
+            unknown_image_path = f"D:\\PYTHON\\IMGS\\unknown_{timestamp}.jpg"
+            cv2.imwrite(unknown_image_path, face_crop)
+            cv2.imshow('Unknown Face Captured', face_crop)
+            unknown_face_detected = False
+
+        # Draw a rectangle around the detected face and label it
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.putText(frame, name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
+
+    # Display the resulting frame
+    cv2.imshow('Video', frame)
+
+    # Break the loop on 'q' key press
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Release the webcam and close windows
+video_capture.release()
+cv2.destroyAllWindows()
+
+# CODE AVAILABLE ON GIT HUB AS CHAITANYA SHIRSE..... THANK YOU......
